@@ -218,8 +218,14 @@ export default class DockerContainer extends DockerEntity implements Container {
     return this.dockerClient.post(`/containers/${this.id}/kill`);
   }
 
-  remove() {
-    return this.dockerClient.delete(`/containers/${this.id}`);
+  remove(params?: { force?: boolean; v?: boolean; link?: boolean }) {
+    const url = new URL(`http://_/containers/${this.id}`);
+
+    url.searchParams.append("force", params?.force?.toString() ?? "false");
+    url.searchParams.append("v", params?.v?.toString() ?? "false");
+    url.searchParams.append("link", params?.link?.toString() ?? "false");
+
+    return this.dockerClient.delete(url.toString());
   }
 
   async *attach(): AsyncIterable<DockerStreamChunk> {
