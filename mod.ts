@@ -8,6 +8,8 @@ const dockerClient = new DockerClient(
 
 const dockerRuntime = new DockerRuntime(dockerClient);
 
-const containers = await dockerRuntime.getContainers();
+const containers = await dockerRuntime.getContainers({
+    status: ["exited"]
+});
 
 console.log(containers);

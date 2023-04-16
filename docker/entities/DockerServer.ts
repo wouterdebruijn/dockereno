@@ -2,7 +2,7 @@ import DockerEntity from "../DockerEntity.ts";
 import DockerContainer, { Container } from "./DockerContainer.ts";
 
 type ContainerFilter = {
-  [key in keyof Container]?: Container[key];
+  [key in keyof Container]?: Container[key][];
 };
 
 export default class DockerRuntime extends DockerEntity {
@@ -16,7 +16,6 @@ export default class DockerRuntime extends DockerEntity {
 
     const response = await this.dockerClient.get(url);
 
-    console.log(response.body);
     const mapped = this.dockerResponseMapper(
       JSON.parse(response.body),
     ) as Container[];
