@@ -1,4 +1,4 @@
-import { DockerClient } from "../DockerClient.ts";
+import DockerClient from "../DockerClient.ts";
 import DockerEntity from "../DockerEntity.ts";
 
 export type Port = unknown; // Unimplemented
@@ -35,6 +35,7 @@ export interface Container {
 
 export interface HostConfig {
   networkMode: string;
+  [key: string]: unknown;
 }
 
 export interface NetworkSettings {
@@ -70,7 +71,91 @@ export interface Mount {
   propagation: string;
 }
 
+export interface ContainerCreateOptions {
+  hostname?: string;
+  domainname?: string;
+  user?: string;
+  attachStdin?: boolean;
+  attachStdout?: boolean;
+  attachStderr?: boolean;
+  tty?: boolean;
+  openStdin?: boolean;
+  stdinOnce?: boolean;
+  env?: string[];
+  cmd?: string[];
+  entrypoint?: string[];
+  image: string;
+  labels?: Record<string, string>;
+  volumes?: Record<string, unknown>;
+  workingDir?: string;
+  networkDisabled?: boolean;
+  macAddress?: string;
+  exposedPorts?: Record<string, unknown>;
+  stopSignal?: "SIGTERM" | "SIGKILL" | string;
+  hostConfig?: HostConfig;
+  networkingConfig?: {
+    endpointsConfig: Networks;
+  };
+}
+
+export type ContainerFilter = {
+  [key in keyof Container]?: Container[key][];
+};
+
+export interface DockerStreamChunk {
+  stdin: boolean;
+  stdout: boolean;
+  stderr: boolean;
+  payload: string;
+}
+
 export default class DockerContainer extends DockerEntity implements Container {
+  static async create(
+    dockerClient: DockerClient,
+    options: ContainerCreateOptions,
+  ): Promise<string> {
+    const response = await dockerClient.post(
+      "/containers/create",
+      JSON.stringify(options),
+    );
+
+    return JSON.parse(response.body).Id;
+  }
+
+  static async inspect(
+    dockerClient: DockerClient,
+    id: string,
+  ) {
+    // TODO: Inspects return more data then the list function, this needs different interfaces
+    const response = await dockerClient.get(
+      `/containers/${id}/json`,
+    );
+
+    return new DockerContainer(
+      dockerClient,
+      this.dockerResponseMapper(JSON.parse(response.body)) as Container,
+    );
+  }
+
+  static async list(
+    dockerClient: DockerClient,
+    filter: ContainerFilter = {},
+  ): Promise<DockerContainer[]> {
+    const url = new URL("http://_/containers/json");
+
+    url.searchParams.append("all", "true");
+    url.searchParams.append("filters", JSON.stringify(filter));
+
+    const response = await dockerClient.get(url.toString());
+
+    const mapped = this.dockerResponseMapper(
+      JSON.parse(response.body),
+    ) as Container[];
+    return mapped.map((container: Container) =>
+      new DockerContainer(dockerClient, container)
+    );
+  }
+
   id: string;
   names: string[];
   image: string;
@@ -115,5 +200,47 @@ export default class DockerContainer extends DockerEntity implements Container {
     this.hostConfig = container.hostConfig;
     this.networkSettings = container.networkSettings;
     this.mounts = container.mounts;
+  }
+
+  start() {
+    return this.dockerClient.post(`/containers/${this.id}/start`);
+  }
+
+  stop() {
+    return this.dockerClient.post(`/containers/${this.id}/stop`);
+  }
+
+  restart() {
+    return this.dockerClient.post(`/containers/${this.id}/restart`);
+  }
+
+  kill() {
+    return this.dockerClient.post(`/containers/${this.id}/kill`);
+  }
+
+  remove() {
+    return this.dockerClient.delete(`/containers/${this.id}`);
+  }
+
+  async *attach(): AsyncIterable<DockerStreamChunk> {
+    const { stream } = await this.dockerClient.stream(
+      `/containers/${this.id}/attach?stream=1&stdout=1&stderr=1`,
+    );
+
+    const decoder = new TextDecoder();
+
+    for await (const chunk of stream) {
+      // First byte stores the type of stream
+      const stdin = chunk[0] === 0;
+      const stdout = chunk[0] === 1;
+      const stderr = chunk[0] === 2;
+
+      // Last 4 bytes store the size of the payload
+      const size = new DataView(chunk.buffer).getUint32(4, false);
+
+      const payload = decoder.decode(chunk.slice(8, size + 8));
+
+      yield { stdin, stdout, stderr, payload: payload.trim() };
+    }
   }
 }

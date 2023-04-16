@@ -1,6 +1,6 @@
-import { DockerClient } from "./docker/DockerClient.ts";
-import DockerRuntime from "./docker/entities/DockerServer.ts";
-import { UnixSocketClient } from "./socket/UnixSocketConnection.ts";
+import DockerClient from "./docker/DockerClient.ts";
+import DockerRuntime from "./docker/entities/DockerRuntime.ts";
+import UnixSocketClient from "./socket/UnixSocketConnection.ts";
 
 const dockerClient = new DockerClient(
   new UnixSocketClient("/var/run/docker.sock"),
@@ -8,8 +8,20 @@ const dockerClient = new DockerClient(
 
 const dockerRuntime = new DockerRuntime(dockerClient);
 
-const containers = await dockerRuntime.getContainers({
-    status: ["exited"]
+// Create container that runs forever saying "Hello World" every 5 seconds
+const alpineContainer = await dockerRuntime.createContainer({
+  image: "alpine",
+  cmd: [
+    "sh",
+    "-c",
+    "while true; do echo 'Hello World'; sleep 5; done",
+  ],
+  networkDisabled: true,
 });
 
-console.log(containers);
+// Start container
+alpineContainer.start();
+
+for await (const line of alpineContainer.attach()) {
+  console.log(line);
+}

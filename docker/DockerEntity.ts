@@ -1,4 +1,4 @@
-import { DockerClient } from "./DockerClient.ts";
+import DockerClient from "./DockerClient.ts";
 
 export default class DockerEntity {
   protected dockerClient: DockerClient;
@@ -10,7 +10,7 @@ export default class DockerEntity {
   /*
    * Function for mapping the responses from docker, doesn't account for custom naming of network interfaces and other items which are returned as keys of objects.
    */
-  protected dockerResponseMapper(unknownValue: unknown): unknown {
+  protected static dockerResponseMapper(unknownValue: unknown): unknown {
     // Check if we are dealing with an object
     if (typeof unknownValue !== "object" || unknownValue === null) {
       return unknownValue;
