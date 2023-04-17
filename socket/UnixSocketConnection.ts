@@ -44,6 +44,7 @@ export default class UnixSocketClient implements DockerConnection {
 
     // Send request to unix socket
     const request = this.encoder.encode(header);
+
     await connection.write(request);
 
     return connection;

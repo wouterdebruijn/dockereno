@@ -1,8 +1,11 @@
+import { RequestType } from "../../socket/DockerConnection.ts";
 import DockerEntity from "../DockerEntity.ts";
 import DockerContainer, {
   ContainerCreateOptions,
   ContainerFilter,
 } from "./DockerContainer.ts";
+
+export type DockerEvent = unknown;
 
 export default class DockerRuntime extends DockerEntity {
   public getContainers(
@@ -18,5 +21,20 @@ export default class DockerRuntime extends DockerEntity {
   public async createContainer(options: ContainerCreateOptions) {
     const id = await DockerContainer.create(this.dockerClient, options);
     return DockerContainer.inspect(this.dockerClient, id);
+  }
+
+  public async *events(): AsyncIterable<DockerEvent> {
+    const { stream } = await this.dockerClient.stream(
+      "/events",
+      RequestType.GET,
+    );
+
+    const decoder = new TextDecoder();
+
+    for await (const chunk of stream) {
+      yield DockerRuntime.dockerResponseMapper(
+        JSON.parse(decoder.decode(chunk).trim()),
+      );
+    }
   }
 }
