@@ -8,9 +8,10 @@ import DockerContainer, {
 export type DockerEvent = unknown;
 
 export default class DockerRuntime extends DockerEntity {
+  // TODO: Create custom container interface for list containers. (Which include less information than an fully inspected container)
   public getContainers(
     filter: ContainerFilter = {},
-  ): Promise<DockerContainer[]> {
+  ): Promise<Partial<DockerContainer>[]> {
     return DockerContainer.list(this.dockerClient, filter);
   }
 

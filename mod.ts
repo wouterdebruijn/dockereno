@@ -8,17 +8,18 @@ const dockerClient = new DockerClient(
 
 const dockerRuntime = new DockerRuntime(dockerClient);
 
-const events = await dockerRuntime.events();
+// Create alpine container sending hello world to stdout every 5 seconds
+// const container = await dockerRuntime.createContainer({
+//   image: "alpine",
+//   cmd: ["sh", "-c", "while true; do echo hello world; sleep 5; done"],
+//   tty: true,
+// });
 
-async function printEvents() {
-  for await (const event of events) {
-    console.log(event);
-  }
+// // Start the container
+// await container.start();
+
+const containers = await dockerRuntime.getContainers();
+
+for await (const message of containers[0].attach()) {
+  console.log(message)
 }
-
-const container = await dockerRuntime.createContainer({
-  image: "alpine",
-  cmd: ["sh", "-c", "while true; do echo hello; sleep 1; done"],
-});
-
-Promise.all([printEvents(), container.start()]);
