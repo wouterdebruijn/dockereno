@@ -2,6 +2,7 @@ import {
   DockerConnection,
   DockerResponse,
   DockerStreamResponse,
+  RequestType,
 } from "../socket/DockerConnection.ts";
 
 export class DockerError extends Error {
@@ -59,7 +60,8 @@ export default class DockerClient {
 
   public stream(
     endpoint: string,
+    method: RequestType,
   ): Promise<DockerStreamResponse> {
-    return this.connection.stream(endpoint);
+    return this.connection.stream(endpoint, method);
   }
 }

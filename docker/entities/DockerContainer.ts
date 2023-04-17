@@ -1,3 +1,4 @@
+import { RequestType } from "../../socket/DockerConnection.ts";
 import DockerClient from "../DockerClient.ts";
 import DockerEntity from "../DockerEntity.ts";
 
@@ -231,6 +232,7 @@ export default class DockerContainer extends DockerEntity implements Container {
   async *attach(): AsyncIterable<DockerStreamChunk> {
     const { stream } = await this.dockerClient.stream(
       `/containers/${this.id}/attach?stream=1&stdout=1&stderr=1`,
+      RequestType.POST,
     );
 
     const decoder = new TextDecoder();

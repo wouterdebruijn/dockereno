@@ -6,6 +6,7 @@ export interface DockerConnection {
   delete(path: string): Promise<DockerResponse>;
   stream(
     path: string,
+    method: RequestType,
     body?: string,
   ): Promise<DockerStreamResponse>;
 }

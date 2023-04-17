@@ -118,17 +118,18 @@ export default class UnixSocketClient implements DockerConnection {
   }
 
   /**
-   * Stream POST request
+   * Stream request
    * @param path endpoint path
    * @param body request body
-   * @returns I dont know yet
+   * @returns Docker response containing status, headers and body and iterable stream
    */
   async stream(
     path: string,
+    method: RequestType,
     body?: string,
   ): Promise<DockerStreamResponse> {
     const connection = await this.createConnection(
-      RequestType.POST,
+      method,
       path,
       {
         "Upgrade": "tcp",
@@ -137,7 +138,7 @@ export default class UnixSocketClient implements DockerConnection {
       body,
     );
 
-    const buffer = new Uint8Array(128);
+    const buffer = new Uint8Array(1024); // 1kb buffer, should be enough for all headers
     await connection.read(buffer);
     const response = this.decoder.decode(buffer);
 
