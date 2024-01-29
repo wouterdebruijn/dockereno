@@ -23,7 +23,7 @@ export default class DockerEntity {
 
     const newObj: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(unknownValue)) {
-      const newKey = key.replace(/^./, key[0].toLowerCase());
+      const newKey = key.replace(/^[A-Z]{1,}/, (c) => c.toLowerCase());
       newObj[newKey] = this.dockerResponseMapper(value);
     }
 
