@@ -5,7 +5,19 @@ import DockerContainer, {
   ContainerFilter,
 } from "./DockerContainer.ts";
 
-export type DockerEvent = unknown;
+export type DockerEvent = {
+  status: "create" | "start" | "stop" | "die" | "destroy"
+  id: string;
+  from: string;
+  type: "container" | string;
+  action: string;
+  time: number;
+  timeNano: number;
+  actor: {
+    id: string;
+    attributes: Record<string, string>;
+  }
+}
 
 export default class DockerRuntime extends DockerEntity {
   // TODO: Create custom container interface for list containers. (Which include less information than an fully inspected container)
@@ -58,7 +70,7 @@ export default class DockerRuntime extends DockerEntity {
           continue;
         }
 
-        yield DockerRuntime.dockerResponseMapper(json)
+        yield DockerRuntime.dockerResponseMapper(json) as DockerEvent;
       }
     }
   }
