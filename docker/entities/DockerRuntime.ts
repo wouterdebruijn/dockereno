@@ -58,7 +58,7 @@ export default class DockerRuntime extends DockerEntity {
           continue;
         }
 
-        yield json;
+        yield DockerRuntime.dockerResponseMapper(json)
       }
     }
   }
