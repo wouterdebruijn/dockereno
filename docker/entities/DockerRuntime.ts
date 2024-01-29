@@ -24,6 +24,14 @@ export default class DockerRuntime extends DockerEntity {
     return DockerContainer.inspect(this.dockerClient, id);
   }
 
+  private safeParseJson(json: string) {
+    try {
+      return JSON.parse(json);
+    } catch {
+      return false;
+    }
+  }
+
   public async *events(): AsyncIterable<DockerEvent> {
     const { stream } = await this.dockerClient.stream(
       "/events",
@@ -31,14 +39,26 @@ export default class DockerRuntime extends DockerEntity {
     );
 
     const decoder = new TextDecoder();
+    let buffer = ""
 
     for await (const chunk of stream) {
-      const safeChunks = decoder.decode(chunk).trim().split("\n");
+      // Add new data to buffer
+      buffer += decoder.decode(chunk).trim();
 
-      for (const chunk of safeChunks) {
-        yield DockerRuntime.dockerResponseMapper(
-          JSON.parse(chunk),
-        );
+      // Split buffer into chunks that might be valid JSON
+      const jsonChunks = buffer.split("\n");
+      buffer = "";
+
+      for (const chunk of jsonChunks) {
+        const json = this.safeParseJson(chunk);
+
+        // If the object is not valid JSON, we assume it will be completed in the next chunk
+        if (!json) {
+          buffer = chunk;
+          continue;
+        }
+
+        yield json;
       }
     }
   }
