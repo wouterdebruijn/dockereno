@@ -47,15 +47,15 @@ export interface NetworkSettings {
 export type Networks = Record<string, Network>;
 
 export interface Network {
-  iPAMConfig: unknown;
+  ipamConfig: unknown;
   links: unknown;
   aliases: unknown;
   networkID: string;
   endpointID: string;
   gateway: string;
-  iPAddress: string;
-  iPPrefixLen: number;
-  iPv6Gateway: string;
+  ipaddress: string;
+  ipprefixLen: number;
+  ipv6Gateway: string;
   globalIPv6Address: string;
   globalIPv6PrefixLen: number;
   macAddress: string;
