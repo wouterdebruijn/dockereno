@@ -33,9 +33,13 @@ export default class DockerRuntime extends DockerEntity {
     const decoder = new TextDecoder();
 
     for await (const chunk of stream) {
-      yield DockerRuntime.dockerResponseMapper(
-        JSON.parse(decoder.decode(chunk).trim()),
-      );
+      const safeChunks = decoder.decode(chunk).trim().split("\n");
+
+      for (const chunk of safeChunks) {
+        yield DockerRuntime.dockerResponseMapper(
+          JSON.parse(chunk),
+        );
+      }
     }
   }
 }
